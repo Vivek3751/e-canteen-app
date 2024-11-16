@@ -1,38 +1,52 @@
-import React, { createContext, useState, ReactNode } from "react";
+import React, { createContext, useState, ReactNode } from 'react';
 
-// Define types for orders and menu
-interface OrderContextType {
-  orders: string[];
-  addOrder: (order: string) => void;
+// Define types for orders and the context
+type Order = {
+  id: string;
+  name: string;
+  status: string; // Status can be 'Received', 'Picked', or 'Prepared'
+};
+
+type OrderContextType = {
+  orders: Order[];
   menuItems: string[];
-  addMenuItem: (item: string) => void;
-}
+  addOrder: (name: string) => void;
+  updateOrderStatus: (orderId: string, newStatus: string) => void;
+};
 
-interface OrderProviderProps {
-  children: ReactNode;
-}
+export const OrderContext = createContext<OrderContextType | undefined>(undefined);
 
-// Creating the context with an initial empty state
-const OrderContext = createContext<OrderContextType | undefined>(undefined);
+export const OrderProvider = ({ children }: { children: ReactNode }) => {
+  // Initial state
+  const [menuItems] = useState<string[]>(['Idly', 'Pizza', 'FriedRice']);
+  const [orders, setOrders] = useState<Order[]>([
+    { id: '1', name: 'Idly', status: 'Received' },
+    { id: '2', name: 'Pizza', status: 'Received' },
+    { id: '3', name: 'FriedRice', status: 'Picked' },
+  ]);
 
-
-const OrderProvider: React.FC<OrderProviderProps> = ({ children }) => {
-  const [orders, setOrders] = useState<string[]>([]);
-  const [menuItems, setMenuItems] = useState<string[]>(["Pizza", "Burger", "Pasta"]);
-
-  const addOrder = (order: string) => {
-    setOrders([...orders, order]);
+  // Function to add a new order
+  const addOrder = (name: string) => {
+    const newOrder: Order = {
+      id: Math.random().toString(), // Generate a random ID
+      name,
+      status: 'Received',
+    };
+    setOrders((prevOrders) => [...prevOrders, newOrder]);
   };
 
-  const addMenuItem = (item: string) => {
-    setMenuItems([...menuItems, item]);
+  // Function to update order status
+  const updateOrderStatus = (orderId: string, newStatus: string) => {
+    setOrders((prevOrders) =>
+      prevOrders.map((order) =>
+        order.id === orderId ? { ...order, status: newStatus } : order
+      )
+    );
   };
 
   return (
-    <OrderContext.Provider value={{ orders, addOrder, menuItems, addMenuItem }}>
+    <OrderContext.Provider value={{ orders, menuItems, addOrder, updateOrderStatus }}>
       {children}
     </OrderContext.Provider>
   );
 };
-
-export { OrderContext, OrderProvider };

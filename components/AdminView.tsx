@@ -25,8 +25,9 @@ const AdminView = ({ navigation }: any) => {
             <Text>Order: {item.name}</Text>
             <Text>Status: {item.status}</Text>
             <Button
-              title="Update to Picked"
-              onPress={() => updateOrderStatus(item.id, 'Picked')}
+              title={`Update to ${getNextStatus(item.status)}`}
+              onPress={() => updateOrderStatus(item.id, getNextStatus(item.status))}
+              color="#007BFF"
             />
           </View>
         )}
@@ -35,10 +36,17 @@ const AdminView = ({ navigation }: any) => {
       <Button
         title="Go to Student View"
         onPress={() => navigation.navigate('Student')}
-        color="#007BFF"
+        color="#28A745"
       />
     </View>
   );
+};
+
+// Helper function to get the next status
+const getNextStatus = (currentStatus: string) => {
+  if (currentStatus === 'Received') return 'Picked';
+  if (currentStatus === 'Picked') return 'Prepared';
+  return 'Received'; // Loop back to Received
 };
 
 const styles = StyleSheet.create({
