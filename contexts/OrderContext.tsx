@@ -1,51 +1,80 @@
 import React, { createContext, useState, ReactNode } from 'react';
 
-// Define types for orders and the context
-type Order = {
-  id: string;
-  name: string;
-  status: string; // Status can be 'Received', 'Picked', or 'Prepared'
-};
+export interface Order {
+  items: string[];
+  status: 'Received' | 'Prepared' | 'Picked';
+}
 
-type OrderContextType = {
-  orders: Order[];
+export interface OrderContextProps {
   menuItems: string[];
-  addOrder: (name: string) => void;
-  updateOrderStatus: (orderId: string, newStatus: string) => void;
-};
+  orders: Order[];
+  addMenuItem: (item: string) => void;
+  editMenuItem: (index: number, newItem: string) => void;
+  deleteMenuItem: (index: number) => void;
+  placeOrder: (items: string[]) => void;
+  updateOrderStatus: (index: number) => void;
+}
 
-export const OrderContext = createContext<OrderContextType | undefined>(undefined);
+export const OrderContext = createContext<OrderContextProps | undefined>(undefined);
 
-export const OrderProvider = ({ children }: { children: ReactNode }) => {
-  // Initial state
-  const [menuItems] = useState<string[]>(['Idly', 'Pizza', 'FriedRice']);
-  const [orders, setOrders] = useState<Order[]>([
-    { id: '1', name: 'Idly', status: 'Received' },
-    { id: '2', name: 'Pizza', status: 'Received' },
-    { id: '3', name: 'FriedRice', status: 'Picked' },
-  ]);
+interface OrderProviderProps {
+  children: ReactNode; // Define the type for children
+}
 
-  // Function to add a new order
-  const addOrder = (name: string) => {
-    const newOrder: Order = {
-      id: Math.random().toString(), // Generate a random ID
-      name,
-      status: 'Received',
-    };
-    setOrders((prevOrders) => [...prevOrders, newOrder]);
+export const OrderProvider: React.FC<OrderProviderProps> = ({ children }) => {
+  const [menuItems, setMenuItems] = useState<string[]>(['Pizza', 'Burger', 'Pasta']);
+  const [orders, setOrders] = useState<Order[]>([]);
+
+  const addMenuItem = (item: string) => {
+    setMenuItems((prev) => [...prev, item]);
   };
 
-  // Function to update order status
-  const updateOrderStatus = (orderId: string, newStatus: string) => {
-    setOrders((prevOrders) =>
-      prevOrders.map((order) =>
-        order.id === orderId ? { ...order, status: newStatus } : order
-      )
+  const editMenuItem = (index: number, newItem: string) => {
+    setMenuItems((prev) => {
+      const updated = [...prev];
+      updated[index] = newItem;
+      return updated;
+    });
+  };
+
+  const deleteMenuItem = (index: number) => {
+    setMenuItems((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const placeOrder = (items: string[]) => {
+    const newOrder: Order = { items, status: 'Received' };
+    setOrders((prev) => [...prev, newOrder]);
+  };
+
+  const updateOrderStatus = (index: number) => {
+    setOrders((prev) =>
+      prev.map((order, i) => {
+        if (i === index) {
+          const nextStatus =
+            order.status === 'Received'
+              ? 'Prepared'
+              : order.status === 'Prepared'
+              ? 'Picked'
+              : 'Received';
+          return { ...order, status: nextStatus };
+        }
+        return order;
+      })
     );
   };
 
   return (
-    <OrderContext.Provider value={{ orders, menuItems, addOrder, updateOrderStatus }}>
+    <OrderContext.Provider
+      value={{
+        menuItems,
+        orders,
+        addMenuItem,
+        editMenuItem,
+        deleteMenuItem,
+        placeOrder,
+        updateOrderStatus,
+      }}
+    >
       {children}
     </OrderContext.Provider>
   );
