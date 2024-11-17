@@ -18,7 +18,7 @@ export interface OrderContextProps {
 export const OrderContext = createContext<OrderContextProps | undefined>(undefined);
 
 interface OrderProviderProps {
-  children: ReactNode; // Define the type for children
+  children: ReactNode;
 }
 
 export const OrderProvider: React.FC<OrderProviderProps> = ({ children }) => {

@@ -1,161 +1,128 @@
 import React, { useContext, useState } from 'react';
-import { View, Text, StyleSheet, Button, FlatList, TouchableOpacity } from 'react-native';
-import { OrderContext } from '../contexts/OrderContext';
+import { View, Text, FlatList, Button, StyleSheet, TouchableOpacity } from 'react-native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useNavigation } from '@react-navigation/native';
+import { OrderContext, OrderContextProps } from '../contexts/OrderContext';
+import { RootStackParamList } from '../App'; // Import the navigation type
 
-const StudentView = ({ navigation }: any) => {
-  const orderContext = useContext(OrderContext);
+type StudentViewNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Student'>;
 
-  if (!orderContext) {
-    return <Text>Loading...</Text>;
-  }
+export default function StudentView() {
+  const navigation = useNavigation<StudentViewNavigationProp>();
+  const { menuItems, placeOrder, orders } = useContext(OrderContext) as OrderContextProps;
+  const [selectedItems, setSelectedItems] = useState<string[]>([]);
 
-  const { menuItems, placeOrder } = orderContext;
-
-  // State for managing cart items
-  const [cart, setCart] = useState<string[]>([]);
-
-  // Handle adding items to the cart
   const handleAddToCart = (item: string) => {
-    setCart((prevCart) => [...prevCart, item]);
-  };
-
-  // Handle removing an item from the cart
-  const handleRemoveFromCart = (item: string) => {
-    setCart((prevCart) => prevCart.filter((cartItem) => cartItem !== item));
-  };
-
-  // Handle placing the order
-  const handlePlaceOrder = () => {
-    if (cart.length > 0) {
-      placeOrder(cart); // Call the context function to place the order
-      setCart([]); // Clear the cart after placing the order
-      alert('Order placed successfully!');
-    } else {
-      alert('Please add items to your cart before placing an order.');
+    if (!selectedItems.includes(item)) {
+      setSelectedItems((prev) => [...prev, item]);
     }
   };
 
+  const handlePlaceOrder = () => {
+    if (selectedItems.length > 0) {
+      placeOrder(selectedItems);
+      setSelectedItems([]);
+    }
+  };
+
+  const liveOrders = orders.filter(
+    (order) => order.status === 'Received' || order.status === 'Prepared'
+  );
+  const pastOrders = orders.filter((order) => order.status === 'Picked');
+
   return (
     <View style={styles.container}>
-      <Text style={styles.header}>Student View</Text>
-      <Text style={styles.subHeader}>Menu:</Text>
+      <Button title="Go to Admin View" onPress={() => navigation.navigate('Admin')} />
+
+      <Text style={styles.header}>Menu List</Text>
       <FlatList
         data={menuItems}
         keyExtractor={(item, index) => index.toString()}
         renderItem={({ item }) => (
-          <View style={styles.menuItemContainer}>
-            <Text style={styles.menuItemText}>{item}</Text>
-            <TouchableOpacity style={styles.addButton} onPress={() => handleAddToCart(item)}>
-              <Text style={styles.addButtonText}>Add</Text>
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity style={styles.menuItem} onPress={() => handleAddToCart(item)}>
+            <Text>{item}</Text>
+          </TouchableOpacity>
         )}
       />
-      <Text style={styles.subHeader}>Cart:</Text>
-      {cart.length > 0 ? (
+
+      <View style={styles.cart}>
+        <Text style={styles.header}>Selected Items</Text>
         <FlatList
-          data={cart}
+          data={selectedItems}
           keyExtractor={(item, index) => index.toString()}
           renderItem={({ item }) => (
-            <View style={styles.cartItemContainer}>
-              <Text style={styles.cartItemText}>{item}</Text>
-              <TouchableOpacity
-                style={styles.removeButton}
-                onPress={() => handleRemoveFromCart(item)}
-              >
-                <Text style={styles.removeButtonText}>Remove</Text>
-              </TouchableOpacity>
+            <View style={styles.cartItem}>
+              <Text>{item}</Text>
             </View>
           )}
         />
-      ) : (
-        <Text style={styles.emptyCartText}>Your cart is empty.</Text>
-      )}
-      <View style={styles.placeOrderButtonContainer}>
         <Button title="Place Order" onPress={handlePlaceOrder} />
       </View>
-      <View style={styles.navigationButtonContainer}>
-        <Button title="Go to Admin View" onPress={() => navigation.navigate('Admin')} />
+
+      <View style={styles.statusSection}>
+        <Text style={styles.header}>Live Orders</Text>
+        <FlatList
+          data={liveOrders}
+          keyExtractor={(item, index) => index.toString()}
+          renderItem={({ item }) => (
+            <View style={styles.orderItem}>
+              <Text>Items: {item.items.join(', ')}</Text>
+              <Text>Status: {item.status}</Text>
+            </View>
+          )}
+        />
+      </View>
+
+      <View style={styles.statusSection}>
+        <Text style={styles.header}>Past Orders</Text>
+        <FlatList
+          data={pastOrders}
+          keyExtractor={(item, index) => index.toString()}
+          renderItem={({ item }) => (
+            <View style={styles.orderItem}>
+              <Text>Items: {item.items.join(', ')}</Text>
+              <Text>Status: {item.status}</Text>
+            </View>
+          )}
+        />
       </View>
     </View>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
-    backgroundColor: '#f5f5f5',
+    padding: 16,
+    backgroundColor: '#fff',
   },
   header: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 20,
-  },
-  subHeader: {
     fontSize: 18,
     fontWeight: 'bold',
-    marginVertical: 10,
+    marginVertical: 8,
   },
-  menuItemContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: '#fff',
+  menuItem: {
     padding: 10,
+    backgroundColor: '#e0f7fa',
     marginVertical: 5,
     borderRadius: 5,
-    borderWidth: 1,
-    borderColor: '#ddd',
   },
-  menuItemText: {
-    fontSize: 16,
+  cart: {
+    marginTop: 16,
   },
-  addButton: {
-    backgroundColor: '#007bff',
-    paddingVertical: 5,
-    paddingHorizontal: 10,
-    borderRadius: 5,
-  },
-  addButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-  cartItemContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    padding: 10,
+  cartItem: {
+    padding: 8,
+    backgroundColor: '#ffecb3',
     marginVertical: 5,
     borderRadius: 5,
-    borderWidth: 1,
-    borderColor: '#ddd',
   },
-  cartItemText: {
-    fontSize: 16,
+  statusSection: {
+    marginTop: 16,
   },
-  removeButton: {
-    backgroundColor: '#ff4d4d',
-    paddingVertical: 5,
-    paddingHorizontal: 10,
+  orderItem: {
+    padding: 8,
+    backgroundColor: '#c8e6c9',
+    marginVertical: 5,
     borderRadius: 5,
-  },
-  removeButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-  emptyCartText: {
-    fontSize: 16,
-    fontStyle: 'italic',
-    color: '#888',
-  },
-  placeOrderButtonContainer: {
-    marginVertical: 20,
-  },
-  navigationButtonContainer: {
-    marginTop: 10,
   },
 });
-
-export default StudentView;
